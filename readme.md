@@ -17,11 +17,10 @@ Maybe someday this extension will be published on proper extension stores.
 
 No configuration, it just works!
 
-### Publishing
+## Extension created by the browser-extension-template by fregante
 
-## Extensions created using this template
+See the [original template](https://github.com/fregante/browser-extension-template) and maybe support the author [by GitHub](https://github.com/sponsors/fregante) or [by PayPal](https://paypal.me/bytemode)
 
-- [notlmn/copy-as-markdown](https://github.com/notlmn/copy-as-markdown) - Browser extension to copy hyperlinks, images, and selected text as Markdown.
 
 ## License
 
