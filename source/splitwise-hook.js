@@ -1,5 +1,11 @@
+const mutation_config = { attributes: true, childList: true, subtree: true };
+
+let mutation_observer;
+
 function do_stuff() {
-    let container = $('.full_group.summary');
+    mutation_observer.disconnect();
+    let sidebar = $('#right_sidebar_content');
+    let container = sidebar.find('.full_group.summary');
     let ppl = container.children('a.personal_balance');
     let details_btn = container.children('a.details');
 
@@ -12,7 +18,10 @@ function do_stuff() {
     });
     container.append(ppl);
     container.append(details_btn);
+    mutation_observer.observe(sidebar[0], mutation_config);
 }
+
+mutation_observer = new MutationObserver(do_stuff);
 
 
 do_stuff();
