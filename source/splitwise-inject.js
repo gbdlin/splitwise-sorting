@@ -1,8 +1,6 @@
-var s = document.createElement('script');
+var browser = require("webextension-polyfill");
 
-s.src = browser.extension.getURL('splitwise-hook.js')
-// s.onload = function () {
-//     this.remove();
-// };
+let s = document.createElement('script');
+s.src = browser.extension.getURL('splitwise-hook.js');
 
-document.documentElement.appendChild(s);
+document.documentElement.append(s);

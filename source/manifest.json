@@ -23,7 +23,7 @@
     "content_scripts": [
         {
             "matches": ["https://secure.splitwise.com/*"],
-            "js": ["browser-polyfill.min.js", "splitwise-inject.js"]
+            "js": ["splitwise-inject.js"]
         }
     ],
     "web_accessible_resources": ["splitwise-hook.js"]

@@ -14,6 +14,7 @@ jobs:
   Version:
     outputs:
       version: ${{ github.ref }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,56 +22,74 @@ jobs:
           fetch-depth: 20
       - name: install
         run: npm ci || npm install
+      - name: test
+        run: npm test
       - name: build
         run: npm run build --if-present
-      - uses: notlmn/release-with-changelog@v3
-        if: steps.daily-version.outputs.created
+      - uses: gbdlin/release-with-changelog@v3.5.0
+        id: upload_url
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           exclude: true
-#   Submit:
-#     needs: Version
-#     if: github.event_name == 'workflow_dispatch' || needs.Version.outputs.created
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         command:
-#           - firefox
-#           - chrome
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#       - name: Create GitHub deployment
-#         uses: fregante/compact-github-deployment-action@v0
-#         with:
-#           token: ${{ secrets.GITHUB_TOKEN }}
-#           environment: ${{ matrix.command }}
-#       - name: install
-#         run: npm ci || npm install
-#       - run: npm run build --if-present
-#       - name: Update extension’s meta
-#         run: >-
-#           npx dot-json@1 $DIRECTORY/manifest.json version ${{
-#           needs.Version.outputs.version }}
-#       - name: Submit
-#         run: |
-#           case ${{ matrix.command }} in
-#             chrome)
-#               cd $DIRECTORY && npx chrome-webstore-upload-cli@1 upload --auto-publish
-#               ;;
-#             firefox)
-#               cd $DIRECTORY && npx web-ext-submit@5
-#               ;;
-#           esac
-#         env:
-#           EXTENSION_ID: ${{ secrets.EXTENSION_ID }}
-#           CLIENT_ID: ${{ secrets.CLIENT_ID }}
-#           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-#           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-#           WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
-#           WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
-#       - name: Update GitHub deployment
-#         uses: fregante/compact-github-deployment-action@v0
-#         if: ${{ always() }}
-#         with:
-#           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update extension’s meta
+        run: >-
+          npx dot-json@1 $DIRECTORY/manifest.json version ${{
+          needs.Version.outputs.version }}
+      - name: Upload unsigned package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./my-artifact.zip
+          asset_name: my-artifact-unsigned.zip
+          asset_content_type: application/zip
+      - name: built-plugin
+        uses: actions/upload-artifact@v2
+        with:
+          name: 
+          path: |
+            $DIRECTORY
+  Submit:
+    needs: Version
+    if: needs.Version.outputs.created
+    strategy:
+      fail-fast: false
+      matrix:
+        command:
+          - firefox
+          - chrome
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install
+        run: npm ci || npm install
+      - uses: actions/download-artifact@v2
+        with:
+          name: built-plugin
+      - name: Submit
+        run: |
+          case ${{ matrix.command }} in
+            chrome)
+              cd $DIRECTORY && npx chrome-webstore-upload-cli@1 upload
+              ;;
+            firefox)
+              cd $DIRECTORY && npx web-ext-submit@5
+              ;;
+          esac
+        env:
+          EXTENSION_ID: ${{ secrets.EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+      - name: Upload signed package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.Version.outputs.upload_url }}
+          asset_path: ./my-artifact.zip
+          asset_name: my-artifact.zip
+          asset_content_type: application/zip
